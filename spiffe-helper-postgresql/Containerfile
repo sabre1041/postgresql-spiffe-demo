@@ -1,0 +1,8 @@
+FROM registry.redhat.io/zero-trust-workload-identity-manager/spiffe-helper-rhel9:v0.10.0
+
+USER 0
+
+RUN dnf install -y postgresql && \
+    dnf clean all
+
+USER 65534
