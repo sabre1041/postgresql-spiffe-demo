@@ -132,7 +132,6 @@ spec:
       app: postgresql-spiffe
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: postgresql-spiffe
     spec:
@@ -140,7 +139,33 @@ spec:
       serviceAccountName: postgresql-spiffe
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
-      securityContext: {}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: spiffe-helper-init
+          image: 'quay.io/ablock/spiffe-helper-postgresql:latest'
+          args:
+            - '-config'
+            - /etc/spiffe-helper/helper.conf
+            - '-daemon-mode=false'
+          resources: {}
+          volumeMounts:
+            - name: spiffe-workload-api
+              readOnly: true
+              mountPath: /spiffe-workload-api
+            - name: postgresql-certs
+              mountPath: /opt/postgresql-certs
+            - name: spiffe-helper
+              mountPath: /etc/spiffe-helper
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
       containers:
         - resources: {}
           terminationMessagePath: /dev/termination-log
@@ -172,6 +197,10 @@ spec:
               mountPath: /opt/app-root/src/postgresql-init
             - name: postgres-config
               mountPath: /opt/app-root/src/postgresql-cfg
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
           terminationMessagePolicy: File
           image: 'registry.redhat.io/rhel9/postgresql-16:latest'
         - name: spiffe-helper
@@ -191,6 +220,10 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
       serviceAccount: postgresql-spiffe
       volumes:
         - name: spiffe-workload-api

@@ -74,7 +74,10 @@ spec:
       serviceAccountName: postgresql-spiffe-client
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
-      securityContext: {}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgresql-spiffe-client
           image: 'registry.redhat.io/rhel9/postgresql-16:latest'
@@ -89,6 +92,10 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
         - name: spiffe-helper
           image: 'registry.redhat.io/zero-trust-workload-identity-manager/spiffe-helper-rhel9:v0.10.0'
           args:
@@ -103,6 +110,10 @@ spec:
               mountPath: /opt/postgresql-certs
             - name: spiffe-helper
               mountPath: /etc/spiffe-helper
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: Always
